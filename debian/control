@@ -1,0 +1,25 @@
+Source: gooroom-notifyd
+Section: misc
+Priority: optional
+Maintainer: gooroom <gooroom@gooroom.kr>
+Build-Depends: automake (>= 1.13),
+               debhelper (>= 10),
+               gnome-pkg-tools (>= 0.17),
+               gnome-common (>=3.18.0),
+               dh-autoreconf,
+               dh-systemd,
+               pkg-config,
+               libtool,
+               intltool,
+               libgtk-3-dev,
+               libglib2.0-dev,
+               libnotify-dev
+Standards-Version: 3.9.8
+
+Package: gooroom-notifyd
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+Description: simple, visually-appealing notification daemon for Gooroom
+ gooroom-notifyd is a simple, visually-appealing notification daemon for Gooroom 
+ that implements the Freedesktop.org Desktop Notifications Specification.

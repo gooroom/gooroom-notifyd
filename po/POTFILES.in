@@ -1,0 +1,3 @@
+src/main.c
+src/common.c
+src/gooroom-notify-daemon.c
