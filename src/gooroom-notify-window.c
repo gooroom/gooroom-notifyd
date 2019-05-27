@@ -98,8 +98,8 @@ static void gooroom_notify_window_finalize(GObject *object);
 
 static void gooroom_notify_window_realize(GtkWidget *widget);
 static void gooroom_notify_window_unrealize(GtkWidget *widget);
-static gboolean gooroom_notify_window_draw (GtkWidget *widget,
-                                            cairo_t *cr);
+//static gboolean gooroom_notify_window_draw (GtkWidget *widget,
+//                                            cairo_t *cr);
 static gboolean gooroom_notify_window_enter_leave(GtkWidget *widget,
                                                   GdkEventCrossing *evt);
 static gboolean gooroom_notify_window_button_release(GtkWidget *widget,
@@ -154,17 +154,6 @@ gooroom_notify_window_class_init(GooroomNotifyWindowClass *klass)
                                                g_cclosure_marshal_VOID__STRING,
                                                G_TYPE_NONE,
                                                1, G_TYPE_STRING);
-
-#if 0
-
-    gtk_widget_class_install_style_property(widget_class,
-                                            g_param_spec_double("padding",
-                                                                "padding",
-                                                                "the padding of the text/icon to the notification's border",
-                                                                0.0, 30.0,
-                                                                DEFAULT_PADDING,
-                                                                G_PARAM_READABLE));
-#endif
 }
 
 static void
@@ -202,7 +191,7 @@ gooroom_notify_window_init(GooroomNotifyWindow *window)
                           | GDK_POINTER_MOTION_MASK);
 
     screen = gtk_widget_get_screen(GTK_WIDGET(window));
-#if 1
+
     if(gdk_screen_is_composited(screen)) {
         GdkVisual *visual = gdk_screen_get_rgba_visual (screen);
         if (visual == NULL)
@@ -210,7 +199,6 @@ gooroom_notify_window_init(GooroomNotifyWindow *window)
 
         gtk_widget_set_visual (GTK_WIDGET(window), visual);
     }
-#endif
 
     /* Use the screen width to get a maximum width for the notification bubble.
        This assumes that a character is 10px wide and we want a third of the
@@ -224,21 +212,13 @@ gooroom_notify_window_init(GooroomNotifyWindow *window)
     screen_width = gdk_screen_get_width (screen) / 30;
 #endif
 
-#if 0
     /* Get the style context to get style properties */
-    GtkStyleContext *context;
-	context = gtk_widget_get_style_context (GTK_WIDGET (window));
-    gtk_style_context_get (context,
-                           GTK_STATE_FLAG_NORMAL,
-                           "padding", &padding,
-                           NULL);
-#endif
-
-#if 0
-    gtk_widget_style_get(GTK_WIDGET(window),
-                         "padding", &padding,
-                         NULL);
-#endif
+//    GtkStyleContext *context;
+//	context = gtk_widget_get_style_context (GTK_WIDGET (window));
+//    gtk_style_context_get (context,
+//                           GTK_STATE_FLAG_NORMAL,
+//                           "padding", &padding,
+//                           NULL);
 
     topvbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_name (topvbox, "topvbox");
@@ -253,7 +233,7 @@ gooroom_notify_window_init(GooroomNotifyWindow *window)
 
     window->icon_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_set_border_width(GTK_CONTAINER(window->icon_box), 0);
-//    gtk_widget_set_margin_end (GTK_WIDGET (window->icon_box), padding);
+    gtk_widget_set_margin_end (GTK_WIDGET (window->icon_box), padding);
 
     gtk_box_pack_start(GTK_BOX(tophbox), window->icon_box, FALSE, TRUE, 0);
 
@@ -298,7 +278,7 @@ gooroom_notify_window_init(GooroomNotifyWindow *window)
     window->button_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(window->button_box),
                               GTK_BUTTONBOX_END);
-//    gtk_box_set_spacing (GTK_BOX(window->button_box), padding / 2);
+    gtk_box_set_spacing (GTK_BOX(window->button_box), padding / 2);
     gtk_box_set_homogeneous (GTK_BOX(window->button_box), FALSE);
     gtk_box_pack_end (GTK_BOX(topvbox), window->button_box, FALSE, FALSE, 0);
 }
@@ -459,93 +439,93 @@ gooroom_notify_window_draw_rectangle (GooroomNotifyWindow *window,
     cairo_close_path(cr);
 }
 
-static gboolean gooroom_notify_window_draw (GtkWidget *widget,
-                                            cairo_t *cr)
-{
-    GtkStyleContext *context;
-    GdkRGBA         *border_color, *bg_color;
-    gint  border_width;
-    GtkStateFlags state;
-    cairo_t         *cr2;
-    cairo_surface_t *surface;
-    cairo_region_t  *region;
-    GtkAllocation    allocation;
-
-    GooroomNotifyWindow *window = GOOROOM_NOTIFY_WINDOW(widget);
-
-    gtk_widget_get_allocation (widget, &allocation);
-
-    /* Create a similar surface as of cr */
-    surface = cairo_surface_create_similar (cairo_get_target (cr),
-                                            CAIRO_CONTENT_COLOR_ALPHA,
-                                            allocation.width,
-                                            allocation.height);
-    cr2 = cairo_create (surface);
-
-    /* Fill first with a transparent background */
-    cairo_rectangle (cr2, 0, 0, allocation.width, allocation.height);
-    cairo_set_source_rgba (cr2, 0.5, 0.5, 0.5, 0.0);
-    cairo_fill (cr2);
-
-    /* Draw a rounded rectangle */
-    gooroom_notify_window_draw_rectangle (window, cr2);
-
-    state = GTK_STATE_FLAG_NORMAL;
-    /* Load the css style information for hover aka prelight */
-    if (window->mouse_hover)
-        state = GTK_STATE_FLAG_PRELIGHT;
-
-    /* Get the style context to get style properties */
-    context = gtk_widget_get_style_context (widget);
-    gtk_style_context_save (context);
-    gtk_style_context_get (context,
-                           state,
-                           "border-color", &border_color,
-                           "background-color", &bg_color,
-                           NULL);
-    gtk_style_context_restore (context);
-
-    /* Draw the background, getting its color from the style context*/
-    cairo_set_source_rgba (cr2,
-                           bg_color->red, bg_color->green, bg_color->blue,
-                           1.0);
-    cairo_fill_preserve (cr2);
-    gdk_rgba_free (bg_color);
-
-    /* Now draw the border */
-    border_width = get_max_border_width (context, state);
-    cairo_set_source_rgba (cr2,
-                           border_color->red, border_color->green, border_color->blue,
-                           1.0);
-    cairo_set_line_width (cr2, border_width);
-    cairo_stroke (cr2);
-    gdk_rgba_free (border_color);
-
-    /* Enough, everything we need has been written on the surface */
-    cairo_destroy (cr2);
-
-    /* Set the surface drawn by cr2, to cr */
-    cairo_save (cr);
-    cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-    cairo_set_source_surface (cr, surface, 0, 0);
-    cairo_paint (cr);
-    cairo_restore (cr);
-
-    region = gdk_cairo_region_create_from_surface (surface);
-    if(!gdk_screen_is_composited(gtk_widget_get_screen(widget)))
-        gtk_widget_shape_combine_region(widget, region);
-
-    /* however, of course always set the input shape; it doesn't matter
-     * if this is a pixel or two off here and there */
-    gtk_widget_input_shape_combine_region(widget, region);
-
-    cairo_surface_destroy (surface);
-    cairo_region_destroy (region);
-
-    GTK_WIDGET_CLASS (gooroom_notify_window_parent_class)->draw (widget, cr);
-
-    return FALSE;
-}
+//static gboolean gooroom_notify_window_draw (GtkWidget *widget,
+//                                            cairo_t *cr)
+//{
+//    GtkStyleContext *context;
+//    GdkRGBA         *border_color, *bg_color;
+//    gint  border_width;
+//    GtkStateFlags state;
+//    cairo_t         *cr2;
+//    cairo_surface_t *surface;
+//    cairo_region_t  *region;
+//    GtkAllocation    allocation;
+//
+//    GooroomNotifyWindow *window = GOOROOM_NOTIFY_WINDOW(widget);
+//
+//    gtk_widget_get_allocation (widget, &allocation);
+//
+//    /* Create a similar surface as of cr */
+//    surface = cairo_surface_create_similar (cairo_get_target (cr),
+//                                            CAIRO_CONTENT_COLOR_ALPHA,
+//                                            allocation.width,
+//                                            allocation.height);
+//    cr2 = cairo_create (surface);
+//
+//    /* Fill first with a transparent background */
+//    cairo_rectangle (cr2, 0, 0, allocation.width, allocation.height);
+//    cairo_set_source_rgba (cr2, 0.5, 0.5, 0.5, 0.0);
+//    cairo_fill (cr2);
+//
+//    /* Draw a rounded rectangle */
+//    gooroom_notify_window_draw_rectangle (window, cr2);
+//
+//    state = GTK_STATE_FLAG_NORMAL;
+//    /* Load the css style information for hover aka prelight */
+//    if (window->mouse_hover)
+//        state = GTK_STATE_FLAG_PRELIGHT;
+//
+//    /* Get the style context to get style properties */
+//    context = gtk_widget_get_style_context (widget);
+//    gtk_style_context_save (context);
+//    gtk_style_context_get (context,
+//                           state,
+//                           "border-color", &border_color,
+//                           "background-color", &bg_color,
+//                           NULL);
+//    gtk_style_context_restore (context);
+//
+//    /* Draw the background, getting its color from the style context*/
+//    cairo_set_source_rgba (cr2,
+//                           bg_color->red, bg_color->green, bg_color->blue,
+//                           1.0);
+//    cairo_fill_preserve (cr2);
+//    gdk_rgba_free (bg_color);
+//
+//    /* Now draw the border */
+//    border_width = get_max_border_width (context, state);
+//    cairo_set_source_rgba (cr2,
+//                           border_color->red, border_color->green, border_color->blue,
+//                           1.0);
+//    cairo_set_line_width (cr2, border_width);
+//    cairo_stroke (cr2);
+//    gdk_rgba_free (border_color);
+//
+//    /* Enough, everything we need has been written on the surface */
+//    cairo_destroy (cr2);
+//
+//    /* Set the surface drawn by cr2, to cr */
+//    cairo_save (cr);
+//    cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+//    cairo_set_source_surface (cr, surface, 0, 0);
+//    cairo_paint (cr);
+//    cairo_restore (cr);
+//
+//    region = gdk_cairo_region_create_from_surface (surface);
+//    if(!gdk_screen_is_composited(gtk_widget_get_screen(widget)))
+//        gtk_widget_shape_combine_region(widget, region);
+//
+//    /* however, of course always set the input shape; it doesn't matter
+//     * if this is a pixel or two off here and there */
+//    gtk_widget_input_shape_combine_region(widget, region);
+//
+//    cairo_surface_destroy (surface);
+//    cairo_region_destroy (region);
+//
+//    GTK_WIDGET_CLASS (gooroom_notify_window_parent_class)->draw (widget, cr);
+//
+//    return FALSE;
+//}
 
 static gboolean
 gooroom_notify_window_enter_leave(GtkWidget *widget,
@@ -726,8 +706,7 @@ gooroom_notify_window_new_with_actions(const gchar *summary,
                                        const gchar *body,
                                        const gchar *icon_name,
                                        gint expire_timeout,
-                                       const gchar **actions/*,
-                                       GtkCssProvider *css_provider*/)
+                                       const gchar **actions)
 {
     GooroomNotifyWindow *window;
 
@@ -980,7 +959,7 @@ gooroom_notify_window_set_actions(GooroomNotifyWindow *window,
         if (g_strcmp0 (cur_button_text, "") == 0)
             continue;
 
-//        gdouble padding;
+        gdouble padding;
 //        gtk_widget_style_get(GTK_WIDGET(window),
 //                             "padding", &padding,
 //                             NULL);
@@ -990,7 +969,7 @@ gooroom_notify_window_set_actions(GooroomNotifyWindow *window,
                                g_strdup(cur_action_id),
                                (GDestroyNotify)g_free);
         gtk_widget_show(btn);
-//        gtk_widget_set_margin_top (btn, padding / 2);
+        gtk_widget_set_margin_top (btn, padding / 2);
         gtk_container_add(GTK_CONTAINER(window->button_box), btn);
         g_signal_connect(G_OBJECT(btn), "clicked",
                          G_CALLBACK(gooroom_notify_window_button_clicked),
@@ -1004,11 +983,6 @@ gooroom_notify_window_set_actions(GooroomNotifyWindow *window,
         gtk_label_set_use_markup(GTK_LABEL(lbl), TRUE);
         gtk_widget_show(lbl);
         gtk_container_add(GTK_CONTAINER(btn), lbl);
-/*
-        gtk_style_context_add_provider (gtk_widget_get_style_context (btn),
-                                        GTK_STYLE_PROVIDER (css_provider),
-                                        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-*/
 
         g_free(cur_button_text_escaped);
     }
@@ -1083,8 +1057,7 @@ gooroom_notify_window_set_icon_only(GooroomNotifyWindow *window,
 
 void
 gooroom_notify_window_set_gauge_value(GooroomNotifyWindow *window,
-                                      gint value/*,
-                                      GtkCssProvider *css_provider*/)
+                                      gint value)
 {
     g_return_if_fail(GOOROOM_IS_NOTIFY_WINDOW(window));
 
@@ -1124,11 +1097,6 @@ gooroom_notify_window_set_gauge_value(GooroomNotifyWindow *window,
         gtk_widget_set_size_request(window->gauge, width, -1);
         gtk_widget_show(window->gauge);
         gtk_container_add(GTK_CONTAINER(box), window->gauge);
-/*
-        gtk_style_context_add_provider (gtk_widget_get_style_context (window->gauge),
-                                        GTK_STYLE_PROVIDER (css_provider),
-                                        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-*/
     }
 
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(window->gauge),

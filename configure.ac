@@ -65,7 +65,6 @@ PKG_CHECK_MODULES(X11, x11 >= 1.6.7)
 
 AC_OUTPUT([
   Makefile
-  themes/Makefile
   src/Makefile
   po/Makefile.in
 ])

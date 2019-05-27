@@ -40,8 +40,6 @@
 
 #define SPACE 0
 #define XND_N_MONITORS gooroom_notify_daemon_get_n_monitors_quark()
-//#define KNOWN_APPLICATIONS_PROP       "/applications/known_applications"
-//#define MUTED_APPLICATIONS_PROP       "/applications/muted_applications"
 
 struct _GooroomNotifyDaemon
 {
@@ -56,9 +54,6 @@ struct _GooroomNotifyDaemon
     gboolean do_slideout;
     gboolean do_not_disturb;
     gint primary_monitor;
-
-//    GtkCssProvider *css_provider;
-    gboolean is_default_theme;
 
     GSettings *settings;
 
@@ -109,12 +104,6 @@ static void daemon_quit (GooroomNotifyDaemon *xndaemon);
 static gboolean notify_get_capabilities (GooroomNotifyGBus *skeleton,
                                 		 GDBusMethodInvocation   *invocation,
                                          GooroomNotifyDaemon *xndaemon);
-
-//static void notify_update_known_applications (XfconfChannel *channel,
-//                                              gchar *app_name);
-
-//static gboolean notify_application_is_muted (XfconfChannel *channel,
-//                                             gchar *new_app_name);
 
 static gboolean notify_notify (GooroomNotifyGBus *skeleton,
                                GDBusMethodInvocation   *invocation,
@@ -414,9 +403,6 @@ gooroom_notify_daemon_init(GooroomNotifyDaemon *xndaemon)
     xndaemon->last_notification_id = 1;
     xndaemon->reserved_rectangles = NULL;
     xndaemon->monitors_workarea = NULL;
-
-    /* CSS Styling provider  */
-//    xndaemon->css_provider = gtk_css_provider_new ();
 }
 
 static void
@@ -462,10 +448,8 @@ gooroom_notify_daemon_finalize(GObject *obj)
 
     g_tree_destroy(xndaemon->active_notifications);
 
-//    g_object_unref (xndaemon->css_provider);
-
-//    if(xndaemon->settings)
-//        g_object_unref(xndaemon->settings);
+    if(xndaemon->settings)
+        g_object_unref(xndaemon->settings);
 
     G_OBJECT_CLASS(gooroom_notify_daemon_parent_class)->finalize(obj);
 }
@@ -892,8 +876,6 @@ gooroom_notify_daemon_update_reserved_rectangles(gpointer key,
     gooroom_notify_daemon_window_size_allocate(GTK_WIDGET(window), &allocation, xndaemon);
 }
 
-
-
 static gboolean notify_get_capabilities (GooroomNotifyGBus *skeleton,
                                          GDBusMethodInvocation   *invocation,
                                          GooroomNotifyDaemon *xndaemon)
@@ -908,7 +890,6 @@ static gboolean notify_get_capabilities (GooroomNotifyGBus *skeleton,
 
     return TRUE;
 }
-
 
 static gboolean
 notify_show_window (gpointer window)
@@ -934,136 +915,6 @@ add_and_propagate_css_provider (GtkWidget *widget, GtkStyleProvider *provider, g
         g_list_free (children);
     }
 }
-
-#if 0
-static void
-notify_update_theme_for_window (GooroomNotifyDaemon *xndaemon, GtkWidget *window, gboolean redraw)
-{
-    GtkStyleContext *context;
-
-    context = gtk_widget_get_style_context (GTK_WIDGET(window));
-
-    if (!xndaemon->is_default_theme)
-    {
-        if (gtk_style_context_has_class (context, "osd"))
-            gtk_style_context_remove_class (context, "osd");
-        if (gtk_style_context_has_class (context, "app-notification"))
-            gtk_style_context_remove_class (context, "app-notification");
-
-        add_and_propagate_css_provider (GTK_WIDGET(window),
-                                        GTK_STYLE_PROVIDER(xndaemon->css_provider),
-                                        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    }
-    else
-    {
-        /* These classes are normally defined in themes */
-        if (!gtk_style_context_has_class (context, "osd"))
-            gtk_style_context_add_class (context, "osd");
-
-        if (!gtk_style_context_has_class (context, "app-notification"))
-            gtk_style_context_add_class (context, "app-notification");
-
-        /* Contains few style definition, use it as a fallback */
-        add_and_propagate_css_provider (GTK_WIDGET(window),
-                                        GTK_STYLE_PROVIDER(xndaemon->css_provider),
-                                        GTK_STYLE_PROVIDER_PRIORITY_FALLBACK);
-    }
-
-    if (redraw)
-    {
-        gtk_widget_reset_style (window);
-        gtk_widget_queue_draw (window);
-    }
-}
-#endif
-
-#if 0
-static gboolean
-notify_update_theme_foreach (gpointer key, gpointer value, gpointer data)
-{
-    GooroomNotifyDaemon *xndaemon = GOOROOM_NOTIFY_DAEMON(data);
-    GtkWidget *window = GTK_WIDGET(value);
-
-    notify_update_theme_for_window (xndaemon, window, TRUE);
-
-    return FALSE;
-}
-#endif
-
-#if 0
-static void
-notify_update_known_applications (XfconfChannel *channel, gchar *new_app_name)
-{
-    GPtrArray *known_applications;
-    GValue *val;
-    gint index = 0;
-
-    val = g_new0 (GValue, 1);
-    g_value_init (val, G_TYPE_STRING);
-    g_value_take_string (val, new_app_name);
-
-    known_applications = xfconf_channel_get_arrayv (channel, KNOWN_APPLICATIONS_PROP);
-    /* No known applications, initialize the channel and property */
-    if (known_applications == NULL || known_applications->len < 1) {
-        GPtrArray *array;
-        array = g_ptr_array_new ();
-        g_ptr_array_add (array, val);
-        if (!xfconf_channel_set_arrayv (channel, KNOWN_APPLICATIONS_PROP, array))
-            g_warning ("Could not initialize the application log: %s", new_app_name);
-        g_ptr_array_unref (array);
-    }
-    /* Add the new application to the list unless it's already known */
-    else {
-        guint i;
-        gboolean application_is_known = FALSE;
-        /* Check if the application is actually unknown */
-        for (i = 0; i < known_applications->len; i++) {
-            GValue *known_application;
-            known_application = g_ptr_array_index (known_applications, i);
-            /* Remember where to put the application in alphabetical order */
-            if (g_ascii_strcasecmp (g_value_get_string (known_application), new_app_name) < 0)
-                index = i + 1;
-            /* Just to be sure that we've found the exact same application don't ignore the case when comparing strings here */
-            else if (g_strcmp0 (new_app_name, g_value_get_string (known_application)) == 0) {
-                application_is_known = TRUE;
-                break;
-            }
-        }
-        /* Unknown application, add it in alphabetical order */
-        if (application_is_known == FALSE) {
-            g_ptr_array_insert (known_applications, index, val);
-            if (!xfconf_channel_set_arrayv (channel, KNOWN_APPLICATIONS_PROP, known_applications))
-                g_warning ("Could not add a new application to the log: %s", new_app_name);
-        }
-    }
-    xfconf_array_free (known_applications);
-}
-#endif
-
-#if 0
-static gboolean
-notify_application_is_muted (/*XfconfChannel *channel,*/ gchar *new_app_name)
-{
-    GPtrArray *muted_applications;
-    guint i;
-
-    muted_applications = xfconf_channel_get_arrayv (channel, MUTED_APPLICATIONS_PROP);
-
-    /* Check whether this application should be muted */
-    if (muted_applications != NULL) {
-        for (i = 0; i < muted_applications->len; i++) {
-            GValue *muted_application;
-            muted_application = g_ptr_array_index (muted_applications, i);
-            if (g_str_match_string (new_app_name, g_value_get_string (muted_application), FALSE) == TRUE) {
-                return TRUE;
-            }
-        }
-    }
-    xfconf_array_free (muted_applications);
-
-    return FALSE;
-}
-#endif
 
 static gboolean
 notify_notify (GooroomNotifyGBus *skeleton,
@@ -1092,7 +943,6 @@ notify_notify (GooroomNotifyGBus *skeleton,
     GVariant *item;
     GVariantIter iter;
     guint OUT_id = gooroom_notify_daemon_generate_id(xndaemon);
-//    gboolean application_is_muted = FALSE;
 
     g_variant_iter_init (&iter, hints);
 
@@ -1179,38 +1029,16 @@ notify_notify (GooroomNotifyGBus *skeleton,
     else
         new_app_name = g_strdup (app_name);
 
-//    notify_update_known_applications (xndaemon->settings, new_app_name);
-
     if(expire_timeout == -1)
         expire_timeout = xndaemon->expire_timeout;
 
-//    application_is_muted = notify_application_is_muted (/*xndaemon->settings,*/ new_app_name);
     /* Don't show notification bubbles in the "Do not disturb" mode or if the
        application has been muted by the user. Exceptions are "urgent"
        notifications which do not expire. */
     if (expire_timeout != 0)
     {
-        if (xndaemon->do_not_disturb == TRUE/* ||
-            application_is_muted == TRUE*/)
+        if (xndaemon->do_not_disturb == TRUE)
         {
-#if 0
-            /* Notifications marked as transient will never be logged */
-            if (xndaemon->notification_log == TRUE &&
-                transient == FALSE) {
-                /* Either log in DND mode or always for muted apps */
-                if ((xndaemon->log_level == 0 && xndaemon->do_not_disturb == TRUE) ||
-                    xndaemon->log_level == 1)
-                      /* Log either all, all except muted or only muted applications */
-                      if (xndaemon->log_level_apps == 0 ||
-                          (xndaemon->log_level_apps == 1 && application_is_muted == FALSE) ||
-                          (xndaemon->log_level_apps == 2 && application_is_muted == TRUE)) {
-                          gooroom_notify_log_insert (new_app_name, summary, body,
-                                                  image_data, image_path, app_icon,
-                                                  desktop_id, expire_timeout, actions);
-                      }
-            }
-#endif
-
             gooroom_notify_gbus_complete_notify (skeleton, invocation, OUT_id);
             if (image_data)
                 g_variant_unref (image_data);
@@ -1226,7 +1054,7 @@ notify_notify (GooroomNotifyGBus *skeleton,
     {
         gooroom_notify_window_set_summary(window, summary);
         gooroom_notify_window_set_body(window, body);
-        gooroom_notify_window_set_actions(window, actions/*, xndaemon->css_provider*/);
+        gooroom_notify_window_set_actions(window, actions);
         gooroom_notify_window_set_expire_timeout(window, expire_timeout);
         gooroom_notify_window_set_opacity(window, xndaemon->initial_opacity);
 
@@ -1235,8 +1063,7 @@ notify_notify (GooroomNotifyGBus *skeleton,
         window = GOOROOM_NOTIFY_WINDOW(gooroom_notify_window_new_with_actions(summary, body,
                                                                         app_icon,
                                                                         expire_timeout,
-                                                                        actions/*,
-                                                                        xndaemon->css_provider*/));
+                                                                        actions));
         gooroom_notify_window_set_opacity(window, xndaemon->initial_opacity);
 
         g_object_set_data(G_OBJECT(window), "--notify-id",
@@ -1256,8 +1083,6 @@ notify_notify (GooroomNotifyGBus *skeleton,
                          xndaemon);
 
         gtk_widget_realize(GTK_WIDGET(window));
-
-//        notify_update_theme_for_window (xndaemon, GTK_WIDGET(window), FALSE);
 
         g_idle_add(notify_show_window, window);
     }
@@ -1288,23 +1113,13 @@ notify_notify (GooroomNotifyGBus *skeleton,
         g_free (icon);
     }
 
-#if 0
-    if (xndaemon->notification_log == TRUE &&
-        xndaemon->log_level == 1 &&
-        xndaemon->log_level_apps <= 1 &&
-        transient == FALSE)
-        gooroom_notify_log_insert (new_app_name, summary, body,
-                                image_data, image_path, app_icon,
-                                desktop_id, expire_timeout, actions);
-#endif
-
     gooroom_notify_window_set_icon_only(window, x_canonical);
 
     gooroom_notify_window_set_do_fadeout(window, xndaemon->do_fadeout, xndaemon->do_slideout);
     gooroom_notify_window_set_notify_location(window, xndaemon->notify_location);
 
     if (value_hint_set)
-        gooroom_notify_window_set_gauge_value(window, value_hint/*, xndaemon->css_provider*/);
+        gooroom_notify_window_set_gauge_value(window, value_hint);
     else
         gooroom_notify_window_unset_gauge_value(window);
 
@@ -1371,65 +1186,6 @@ static gboolean notify_quit (GooroomNotifyKrGooroomNotifyd *skeleton,
 }
 
 static void
-gooroom_notify_daemon_set_theme (GooroomNotifyDaemon *xndaemon,
-                                 const gchar *theme)
-{
-    gchar  *file = NULL;
-
-    xndaemon->is_default_theme = g_str_equal ("Default", theme);
-
-    file = g_strdup_printf ("%s/themes/%s/gooroom-notify-4.0/gtk.css", DATADIR, theme);
-
-    if (!g_file_test(file, G_FILE_TEST_EXISTS)) {
-        g_warning ("theme '%s' is not found anywhere is user themes directories", theme);
-        g_free (file);
-        return;
-    }
-
-#if 0
-    GError *error = NULL;
-//    file = g_build_filename(g_get_home_dir(), ".themes", theme,
-//                            "xfce-notify-4.0", "gtk.css", NULL);
-
-//    xndaemon->is_default_theme = (g_strcmp0("Default", theme) == 0);
-
-    if (!g_file_test(file, G_FILE_TEST_EXISTS)) {
-
-        g_free (file);
-        file = g_strconcat("themes/", theme, "/xfce-notify-4.0/gtk.css", NULL);
-        files = xfce_resource_lookup_all(XFCE_RESOURCE_DATA, file);
-        g_free(file);
-        if (!files || !files[0])
-        {
-            g_warning ("theme '%s' is not found anywhere is user themes directories", theme);
-            return;
-        }
-        file = g_strdup (files[0]);
-        g_strfreev(files);
-    }
-#endif
-
-#if 0
-    gboolean css_parsed;
-    css_parsed =
-        gtk_css_provider_load_from_path (xndaemon->css_provider,
-                                         file,
-                                         &error);
-    if (!css_parsed)
-    {
-        g_warning ("Failed to parse css file: %s", error->message);
-        g_error_free (error);
-    }
-    else
-        g_tree_foreach (xndaemon->active_notifications,
-                        (GTraverseFunc)notify_update_theme_foreach,
-                        xndaemon);
-#endif
-
-    g_free(file);
-}
-
-static void
 gooroom_notify_daemon_settings_changed(GSettings *settings,
                                     const gchar *key,
                                     gpointer data)
@@ -1442,10 +1198,6 @@ gooroom_notify_daemon_settings_changed(GSettings *settings,
             xndaemon->expire_timeout *= 1000;
     } else if(g_str_equal (key, "initial-opacity")) {
         xndaemon->initial_opacity = g_settings_get_double(settings, key);
-    } else if(g_str_equal (key, "theme")) {
-        gchar *theme = g_settings_get_string(settings, key);
-        gooroom_notify_daemon_set_theme(xndaemon, theme);
-        g_free (theme);
     } else if(g_str_equal (key, "notify-location")) {
         xndaemon->notify_location = g_settings_get_uint(settings, key);
     } else if(g_str_equal (key, "do-fadeout")) {
@@ -1463,7 +1215,6 @@ static gboolean
 gooroom_notify_daemon_load_config (GooroomNotifyDaemon *xndaemon,
                                    GError **error)
 {
-    gchar *theme = NULL;
     GSettingsSchema *schema = NULL;
 
     schema = g_settings_schema_source_lookup (g_settings_schema_source_get_default (), "apps.gooroom-notifyd", TRUE);
@@ -1474,7 +1225,6 @@ gooroom_notify_daemon_load_config (GooroomNotifyDaemon *xndaemon,
 
     xndaemon->expire_timeout = 10 * 1000;
     xndaemon->initial_opacity = 0.9;
-    gooroom_notify_daemon_set_theme(xndaemon, "Default");
     xndaemon->notify_location = 2;
     xndaemon->do_fadeout = TRUE;
     xndaemon->do_slideout = FALSE;
@@ -1488,10 +1238,6 @@ gooroom_notify_daemon_load_config (GooroomNotifyDaemon *xndaemon,
     
         xndaemon->initial_opacity = g_settings_get_double (xndaemon->settings, "initial-opacity");
     
-        theme = g_settings_get_string(xndaemon->settings, "theme");
-        gooroom_notify_daemon_set_theme(xndaemon, theme);
-        g_free(theme);
-    
         xndaemon->notify_location = g_settings_get_uint(xndaemon->settings, "notify-location");
         xndaemon->do_fadeout = g_settings_get_boolean(xndaemon->settings, "do-fadeout");
         xndaemon->do_slideout = g_settings_get_boolean(xndaemon->settings, "do-slideout");
@@ -1502,58 +1248,6 @@ gooroom_notify_daemon_load_config (GooroomNotifyDaemon *xndaemon,
                          G_CALLBACK(gooroom_notify_daemon_settings_changed),
                          xndaemon);
     }
-
-#if 0
-    xndaemon->settings = xfconf_channel_new("xfce4-notifyd");
-
-    xndaemon->expire_timeout = xfconf_channel_get_int(xndaemon->settings,
-                                                    "/expire-timeout",
-                                                    -1);
-    if(xndaemon->expire_timeout != -1)
-        xndaemon->expire_timeout *= 1000;
-
-    xndaemon->initial_opacity = xfconf_channel_get_double(xndaemon->settings,
-                                                        "/initial-opacity",
-                                                        0.9);
-
-    theme = xfconf_channel_get_string(xndaemon->settings,
-                                      "/theme", "Default");
-    gooroom_notify_daemon_set_theme(xndaemon, theme);
-    g_free(theme);
-
-    xndaemon->notify_location = xfconf_channel_get_uint(xndaemon->settings,
-                                                      "/notify-location",
-                                                      GTK_CORNER_TOP_RIGHT);
-
-    xndaemon->do_fadeout = xfconf_channel_get_bool(xndaemon->settings,
-                                                "/do-fadeout", TRUE);
-
-    xndaemon->do_slideout = xfconf_channel_get_bool(xndaemon->settings,
-                                                "/do-slideout", FALSE);
-
-    xndaemon->primary_monitor = xfconf_channel_get_uint(xndaemon->settings,
-                                                        "/primary-monitor", 0);
-
-    xndaemon->do_not_disturb = xfconf_channel_get_bool(xndaemon->settings,
-                                                       "/do-not-disturb",
-                                                       FALSE);
-
-    xndaemon->notification_log = xfconf_channel_get_bool(xndaemon->settings,
-                                                         "/notification-log",
-                                                         FALSE);
-    xndaemon->log_level = xfconf_channel_get_uint(xndaemon->settings,
-                                                        "/log-level",
-                                                        0);
-    xndaemon->log_level_apps = xfconf_channel_get_uint(xndaemon->settings,
-                                                        "/log-level-apps",
-                                                        0);
-    /* Clean up old notifications from the backlog */
-    xfconf_channel_reset_property (xndaemon->settings, "/backlog", TRUE);
-
-    g_signal_connect(G_OBJECT(xndaemon->settings), "property-changed",
-                     G_CALLBACK(gooroom_notify_daemon_settings_changed),
-                     xndaemon);
-#endif
 
     return TRUE;
 }
