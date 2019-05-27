@@ -898,24 +898,6 @@ notify_show_window (gpointer window)
     return FALSE;
 }
 
-static void
-add_and_propagate_css_provider (GtkWidget *widget, GtkStyleProvider *provider, guint priority)
-{
-    GList *children, *l;
-
-    gtk_style_context_add_provider (gtk_widget_get_style_context (widget), provider, priority);
-
-    if (GTK_IS_CONTAINER (widget))
-    {
-        children = gtk_container_get_children(GTK_CONTAINER(widget));
-        for(l = children; l; l = l->next)
-        {
-            add_and_propagate_css_provider (GTK_WIDGET(l->data), provider, priority);
-        }
-        g_list_free (children);
-    }
-}
-
 static gboolean
 notify_notify (GooroomNotifyGBus *skeleton,
                GDBusMethodInvocation   *invocation,

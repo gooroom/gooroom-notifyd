@@ -717,7 +717,7 @@ gooroom_notify_window_new_with_actions(const gchar *summary,
     gooroom_notify_window_set_body(window, body);
     gooroom_notify_window_set_icon_name(window, icon_name);
     gooroom_notify_window_set_expire_timeout(window, expire_timeout);
-    gooroom_notify_window_set_actions(window, actions/*, css_provider*/);
+    gooroom_notify_window_set_actions(window, actions);
 
     return GTK_WIDGET(window);
 }
@@ -922,8 +922,7 @@ gooroom_notify_window_set_expire_timeout(GooroomNotifyWindow *window,
 
 void
 gooroom_notify_window_set_actions(GooroomNotifyWindow *window,
-                                  const gchar **actions/*,
-                                  GtkCssProvider *css_provider*/)
+                                  const gchar **actions)
 {
     gint i;
     GList *children, *l;
@@ -948,6 +947,7 @@ gooroom_notify_window_set_actions(GooroomNotifyWindow *window,
         const gchar *cur_button_text = actions[i+1];
         GtkWidget *btn, *lbl;
         gchar *cur_button_text_escaped;
+        gdouble padding;
 
         if(!cur_button_text || !cur_action_id || !*cur_action_id)
             break;
@@ -958,11 +958,6 @@ gooroom_notify_window_set_actions(GooroomNotifyWindow *window,
            As we do not support this for the moment we hide buttons without labels. */
         if (g_strcmp0 (cur_button_text, "") == 0)
             continue;
-
-        gdouble padding;
-//        gtk_widget_style_get(GTK_WIDGET(window),
-//                             "padding", &padding,
-//                             NULL);
 
         btn = gtk_button_new();
         g_object_set_data_full(G_OBJECT(btn), "--action-id",
