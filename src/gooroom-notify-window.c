@@ -37,7 +37,6 @@
 #define FADE_TIME              800
 #define FADE_CHANGE_TIMEOUT    50
 #define DEFAULT_RADIUS         10
-#define DEFAULT_PADDING        10.0
 
 struct _GooroomNotifyWindow
 {
@@ -118,6 +117,46 @@ static guint signals[N_SIGS] = { 0, };
 G_DEFINE_TYPE(GooroomNotifyWindow, gooroom_notify_window, GTK_TYPE_WINDOW)
 
 
+
+static gboolean
+event_box_enter_notify (GtkWidget        *event_box,
+                        GdkEventCrossing *event,
+                        gpointer          data)
+{
+	GtkStyleContext *style_context;
+	GtkStateFlags state_flags;
+
+	g_assert (event != NULL);
+	g_assert (GTK_IS_EVENT_BOX (event_box));
+
+	style_context = gtk_widget_get_style_context (event_box);
+	state_flags = gtk_style_context_get_state (style_context);
+
+	gtk_style_context_set_state (style_context, state_flags | GTK_STATE_FLAG_PRELIGHT);
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+static gboolean
+event_box_leave_notify (GtkWidget        *event_box,
+                        GdkEventCrossing *event,
+                        gpointer          data)
+{
+	GtkStyleContext *style_context;
+	GtkStateFlags state_flags;
+
+	g_assert (event != NULL);
+	g_assert (GTK_IS_EVENT_BOX (event_box));
+
+	style_context = gtk_widget_get_style_context (event_box);
+	state_flags = gtk_style_context_get_state (style_context);
+
+	gtk_style_context_set_state (style_context, state_flags & ~GTK_STATE_FLAG_PRELIGHT);
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+
 static void
 gooroom_notify_window_class_init(GooroomNotifyWindowClass *klass)
 {
@@ -160,9 +199,8 @@ static void
 gooroom_notify_window_init(GooroomNotifyWindow *window)
 {
     GdkScreen *screen;
-    GtkWidget *topvbox, *tophbox, *vbox;
+    GtkWidget *ebox, *topvbox, *tophbox, *vbox;
     gint screen_width;
-    gdouble padding = DEFAULT_PADDING;
 #if GTK_CHECK_VERSION (3, 22, 0)
     GdkMonitor *monitor;
     GdkRectangle geometry;
@@ -183,8 +221,8 @@ gooroom_notify_window_init(GooroomNotifyWindow *window)
     gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
     gtk_window_set_type_hint(GTK_WINDOW(window),
                              GDK_WINDOW_TYPE_HINT_NOTIFICATION);
-    gtk_container_set_border_width(GTK_CONTAINER(window), 0);
-    gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
+    gtk_container_set_border_width(GTK_CONTAINER(window), 5);
+//    gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
 
     gtk_widget_add_events(GTK_WIDGET(window),
                           GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
@@ -212,28 +250,32 @@ gooroom_notify_window_init(GooroomNotifyWindow *window)
     screen_width = gdk_screen_get_width (screen) / 30;
 #endif
 
-    /* Get the style context to get style properties */
-//    GtkStyleContext *context;
-//	context = gtk_widget_get_style_context (GTK_WIDGET (window));
-//    gtk_style_context_get (context,
-//                           GTK_STATE_FLAG_NORMAL,
-//                           "padding", &padding,
-//                           NULL);
+    ebox = gtk_event_box_new ();
+    gtk_widget_add_events (ebox,
+                           GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
+                           | GDK_POINTER_MOTION_MASK);
+    gtk_widget_set_name (ebox, "ebox");
+    gtk_widget_show (ebox);
+    gtk_container_add (GTK_CONTAINER (window), ebox);
 
-    topvbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+    g_signal_connect (ebox, "enter-notify-event",
+                      G_CALLBACK (event_box_enter_notify), NULL);
+    g_signal_connect (ebox, "leave-notify-event",
+                      G_CALLBACK (event_box_leave_notify), NULL);
+
+    topvbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_set_name (topvbox, "topvbox");
     gtk_box_set_homogeneous (GTK_BOX (topvbox), FALSE);
-    gtk_container_set_border_width (GTK_CONTAINER(topvbox), 10);
     gtk_widget_show (topvbox);
-    gtk_container_add (GTK_CONTAINER(window), topvbox);
-    tophbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_add (GTK_CONTAINER (ebox), topvbox);
+
+    tophbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
     gtk_box_set_homogeneous (GTK_BOX (tophbox), FALSE);
     gtk_widget_show (tophbox);
     gtk_container_add (GTK_CONTAINER(topvbox), tophbox);
 
     window->icon_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_set_border_width(GTK_CONTAINER(window->icon_box), 0);
-    gtk_widget_set_margin_end (GTK_WIDGET (window->icon_box), padding);
 
     gtk_box_pack_start(GTK_BOX(tophbox), window->icon_box, FALSE, TRUE, 0);
 
@@ -241,7 +283,7 @@ gooroom_notify_window_init(GooroomNotifyWindow *window)
     gtk_widget_show(window->icon);
     gtk_container_add(GTK_CONTAINER(window->icon_box), window->icon);
 
-    window->content_box = vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+    window->content_box = vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 5);
     gtk_box_set_homogeneous(GTK_BOX (vbox), FALSE);
     gtk_container_set_border_width(GTK_CONTAINER(vbox), 0);
     gtk_widget_show(vbox);
@@ -278,7 +320,7 @@ gooroom_notify_window_init(GooroomNotifyWindow *window)
     window->button_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(window->button_box),
                               GTK_BUTTONBOX_END);
-    gtk_box_set_spacing (GTK_BOX(window->button_box), padding / 2);
+    gtk_box_set_spacing (GTK_BOX(window->button_box), 5);
     gtk_box_set_homogeneous (GTK_BOX(window->button_box), FALSE);
     gtk_box_pack_end (GTK_BOX(topvbox), window->button_box, FALSE, FALSE, 0);
 }
@@ -369,78 +411,79 @@ get_max_border_width (GtkStyleContext *context,
 }
 
 
-static void
-gooroom_notify_window_draw_rectangle (GooroomNotifyWindow *window,
-                                     cairo_t *cr)
-{
-    GtkWidget *widget = GTK_WIDGET(window);
-    gint radius = DEFAULT_RADIUS;
-    GtkStateFlags state = GTK_STATE_FLAG_NORMAL;
-    gint border_width;
-    GtkAllocation widget_allocation ;
-    GtkStyleContext *context;
-
-    /* this secifies the border_padding from the edges in order to make
-     * sure the border completely fits into the drawing area */
-    gdouble border_padding = 0.0;
-
-    gtk_widget_get_allocation (widget, &widget_allocation);
-
-    /* Load the css style information for hover aka prelight */
-    if (window->mouse_hover)
-        state = GTK_STATE_FLAG_PRELIGHT;
-
-    context = gtk_widget_get_style_context (widget);
-    /* This is something completely counterintuitive,
-     * but in Gtk >= 3.18 calling gtk_style_context_get
-     * with a state that is different from the current widget state, causes
-     * the widget to redraw itself. Resulting in a storm of draw callbacks.
-     * See : https://bugzilla.gnome.org/show_bug.cgi?id=756524 */
-    gtk_style_context_save (context);
-    gtk_style_context_get (context,
-                           state,
-                           "border-radius", &radius,
-                           NULL);
-    gtk_style_context_restore (context);
-
-    border_width = get_max_border_width (context, state);
-    border_padding = border_width / 2.0;
-
-    /* Always use a small rounded corners. This should not be necessary in
-     * theory, as Adwaita defined border-radius: 0 0 6px 6px; for the
-     * app-notification and osd css classes. The problem is that Gtk for some
-     * reason gets the border-radius as gint and not as GtkBorder. Getting
-     * this way the first value only, which is 0. */
-    if ( radius == 0 ) {
-        radius = 6;
-    }
-
-    cairo_move_to(cr, border_padding, radius + border_padding);
-    cairo_arc(cr, radius + border_padding,
-              radius + border_padding, radius,
-              M_PI, 3.0*M_PI/2.0);
-    cairo_line_to(cr,
-                  widget_allocation.width - radius - border_padding,
-                  border_padding);
-    cairo_arc(cr,
-              widget_allocation.width - radius - border_padding,
-              radius + border_padding, radius,
-              3.0*M_PI/2.0, 0.0);
-    cairo_line_to(cr, widget_allocation.width - border_padding,
-                  widget_allocation.height - radius - border_padding);
-    cairo_arc(cr, widget_allocation.width - radius - border_padding,
-              widget_allocation.height - radius - border_padding,
-              radius, 0.0, M_PI/2.0);
-    cairo_line_to(cr, radius + border_padding,
-                  widget_allocation.height - border_padding);
-    cairo_arc(cr, radius + border_padding,
-              widget_allocation.height - radius - border_padding,
-              radius, M_PI/2.0, M_PI);
-    cairo_close_path(cr);
-}
-
-//static gboolean gooroom_notify_window_draw (GtkWidget *widget,
-//                                            cairo_t *cr)
+//static void
+//gooroom_notify_window_draw_rectangle (GooroomNotifyWindow *window,
+//                                     cairo_t *cr)
+//{
+//    GtkWidget *widget = GTK_WIDGET(window);
+//    gint radius = DEFAULT_RADIUS;
+//    GtkStateFlags state = GTK_STATE_FLAG_NORMAL;
+//    gint border_width;
+//    GtkAllocation widget_allocation ;
+//    GtkStyleContext *context;
+//
+//    /* this secifies the border_padding from the edges in order to make
+//     * sure the border completely fits into the drawing area */
+//    gdouble border_padding = 0.0;
+//
+//    gtk_widget_get_allocation (widget, &widget_allocation);
+//
+//    /* Load the css style information for hover aka prelight */
+//    if (window->mouse_hover)
+//        state = GTK_STATE_FLAG_PRELIGHT;
+//
+//    context = gtk_widget_get_style_context (widget);
+//    /* This is something completely counterintuitive,
+//     * but in Gtk >= 3.18 calling gtk_style_context_get
+//     * with a state that is different from the current widget state, causes
+//     * the widget to redraw itself. Resulting in a storm of draw callbacks.
+//     * See : https://bugzilla.gnome.org/show_bug.cgi?id=756524 */
+//    gtk_style_context_save (context);
+//    gtk_style_context_get (context,
+//                           state,
+//                           "border-radius", &radius,
+//                           NULL);
+//    gtk_style_context_restore (context);
+//
+//    border_width = get_max_border_width (context, state);
+//    border_padding = border_width / 2.0;
+//
+//    /* Always use a small rounded corners. This should not be necessary in
+//     * theory, as Adwaita defined border-radius: 0 0 6px 6px; for the
+//     * app-notification and osd css classes. The problem is that Gtk for some
+//     * reason gets the border-radius as gint and not as GtkBorder. Getting
+//     * this way the first value only, which is 0. */
+//    if ( radius == 0 ) {
+//        radius = 6;
+//    }
+//
+//    cairo_move_to(cr, border_padding, radius + border_padding);
+//    cairo_arc(cr, radius + border_padding,
+//              radius + border_padding, radius,
+//              M_PI, 3.0*M_PI/2.0);
+//    cairo_line_to(cr,
+//                  widget_allocation.width - radius - border_padding,
+//                  border_padding);
+//    cairo_arc(cr,
+//              widget_allocation.width - radius - border_padding,
+//              radius + border_padding, radius,
+//              3.0*M_PI/2.0, 0.0);
+//    cairo_line_to(cr, widget_allocation.width - border_padding,
+//                  widget_allocation.height - radius - border_padding);
+//    cairo_arc(cr, widget_allocation.width - radius - border_padding,
+//              widget_allocation.height - radius - border_padding,
+//              radius, 0.0, M_PI/2.0);
+//    cairo_line_to(cr, radius + border_padding,
+//                  widget_allocation.height - border_padding);
+//    cairo_arc(cr, radius + border_padding,
+//              widget_allocation.height - radius - border_padding,
+//              radius, M_PI/2.0, M_PI);
+//    cairo_close_path(cr);
+//}
+//
+//static gboolean
+//gooroom_notify_window_draw (GtkWidget *widget,
+//                            cairo_t *cr)
 //{
 //    GtkStyleContext *context;
 //    GdkRGBA         *border_color, *bg_color;
@@ -492,6 +535,7 @@ gooroom_notify_window_draw_rectangle (GooroomNotifyWindow *window,
 //    cairo_fill_preserve (cr2);
 //    gdk_rgba_free (bg_color);
 //
+//
 //    /* Now draw the border */
 //    border_width = get_max_border_width (context, state);
 //    cairo_set_source_rgba (cr2,
@@ -500,6 +544,7 @@ gooroom_notify_window_draw_rectangle (GooroomNotifyWindow *window,
 //    cairo_set_line_width (cr2, border_width);
 //    cairo_stroke (cr2);
 //    gdk_rgba_free (border_color);
+//
 //
 //    /* Enough, everything we need has been written on the surface */
 //    cairo_destroy (cr2);
@@ -511,6 +556,7 @@ gooroom_notify_window_draw_rectangle (GooroomNotifyWindow *window,
 //    cairo_paint (cr);
 //    cairo_restore (cr);
 //
+//
 //    region = gdk_cairo_region_create_from_surface (surface);
 //    if(!gdk_screen_is_composited(gtk_widget_get_screen(widget)))
 //        gtk_widget_shape_combine_region(widget, region);
@@ -518,6 +564,7 @@ gooroom_notify_window_draw_rectangle (GooroomNotifyWindow *window,
 //    /* however, of course always set the input shape; it doesn't matter
 //     * if this is a pixel or two off here and there */
 //    gtk_widget_input_shape_combine_region(widget, region);
+//
 //
 //    cairo_surface_destroy (surface);
 //    cairo_region_destroy (region);
@@ -811,7 +858,7 @@ gooroom_notify_window_set_icon_name (GooroomNotifyWindow *window,
         GdkPixbuf *pix = NULL;
         GIcon *icon;
 
-        gtk_icon_size_lookup (GTK_ICON_SIZE_DIALOG, &w, &h);
+        gtk_icon_size_lookup (GTK_ICON_SIZE_DND, &w, &h);
 
         if (g_path_is_absolute (icon_name)) {
             pix = gdk_pixbuf_new_from_file_at_size (icon_name, w, h, NULL);
@@ -824,7 +871,7 @@ gooroom_notify_window_set_icon_name (GooroomNotifyWindow *window,
         }
         else {
             icon = g_themed_icon_new_with_default_fallbacks (icon_name);
-            gtk_image_set_from_gicon (GTK_IMAGE (window->icon), icon, GTK_ICON_SIZE_DIALOG);
+            gtk_image_set_from_gicon (GTK_IMAGE (window->icon), icon, GTK_ICON_SIZE_DND);
             icon_set = TRUE;
         }
 
@@ -858,7 +905,7 @@ gooroom_notify_window_set_icon_pixbuf(GooroomNotifyWindow *window,
     if(pixbuf) {
         gint w, h, pw, ph;
 
-        gtk_icon_size_lookup(GTK_ICON_SIZE_DIALOG, &w, &h);
+        gtk_icon_size_lookup(GTK_ICON_SIZE_DND, &w, &h);
         pw = gdk_pixbuf_get_width(pixbuf);
         ph = gdk_pixbuf_get_height(pixbuf);
 
@@ -947,7 +994,7 @@ gooroom_notify_window_set_actions(GooroomNotifyWindow *window,
         const gchar *cur_button_text = actions[i+1];
         GtkWidget *btn, *lbl;
         gchar *cur_button_text_escaped;
-        gdouble padding;
+//        gdouble padding;
 
         if(!cur_button_text || !cur_action_id || !*cur_action_id)
             break;
@@ -960,11 +1007,12 @@ gooroom_notify_window_set_actions(GooroomNotifyWindow *window,
             continue;
 
         btn = gtk_button_new();
+        gtk_button_set_relief (GTK_BUTTON (btn), GTK_RELIEF_NONE);
         g_object_set_data_full(G_OBJECT(btn), "--action-id",
                                g_strdup(cur_action_id),
                                (GDestroyNotify)g_free);
         gtk_widget_show(btn);
-        gtk_widget_set_margin_top (btn, padding / 2);
+//        gtk_widget_set_margin_top (btn, padding / 2);
         gtk_container_add(GTK_CONTAINER(window->button_box), btn);
         g_signal_connect(G_OBJECT(btn), "clicked",
                          G_CALLBACK(gooroom_notify_window_button_clicked),
