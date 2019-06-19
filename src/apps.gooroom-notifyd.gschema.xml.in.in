@@ -11,13 +11,8 @@
       <summary></summary>
       <description></description>
     </key>
-    <key name="theme" type="s">
-      <default>'Default'</default>
-      <summary></summary>
-      <description></description>
-    </key>
     <key name="notify-location" type="u">
-      <default>2</default>
+      <default>3</default>
       <summary></summary>
       <description></description>
     </key>

@@ -1207,7 +1207,7 @@ gooroom_notify_daemon_load_config (GooroomNotifyDaemon *xndaemon,
 
     xndaemon->expire_timeout = 10 * 1000;
     xndaemon->initial_opacity = 0.9;
-    xndaemon->notify_location = 2;
+    xndaemon->notify_location = 3;
     xndaemon->do_fadeout = TRUE;
     xndaemon->do_slideout = FALSE;
     xndaemon->primary_monitor = 0;
