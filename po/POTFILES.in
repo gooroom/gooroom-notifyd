@@ -1,3 +1,4 @@
 src/main.c
 src/common.c
 src/gooroom-notify-daemon.c
+src/gooroom-notify-window.c

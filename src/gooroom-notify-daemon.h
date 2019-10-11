@@ -2,6 +2,7 @@
  *  gooroom-notifyd
  *
  *  Copyright (c) 2008 Brian Tarricone <bjt23@cornell.edu>
+ *  Copyright (c) 2015-2019 Gooroom <gooroom@gooroom.kr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,9 +31,9 @@ G_BEGIN_DECLS
 
 typedef struct _GooroomNotifyDaemon  GooroomNotifyDaemon;
 
-GType gooroom_notify_daemon_get_type(void) G_GNUC_CONST;
+GType gooroom_notify_daemon_get_type (void) G_GNUC_CONST;
 
-GooroomNotifyDaemon *gooroom_notify_daemon_new_unique(GError **error);
+GooroomNotifyDaemon *gooroom_notify_daemon_new_unique (GError **error);
 
 G_END_DECLS
 

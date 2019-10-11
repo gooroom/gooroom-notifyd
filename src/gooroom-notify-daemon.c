@@ -2,6 +2,7 @@
  *  Copyright (c) 2008-2009 Brian Tarricone <bjt23@cornell.edu>
  *  Copyright (c) 2009 Jérôme Guelfucci <jeromeg@xfce.org>
  *  Copyright (c) 2015 Ali Abdallah    <ali@xfce.org>
+ *  Copyright (c) 2015-2019 Gooroom <gooroom@gooroom.kr>
  *
  *  The workarea per monitor code is taken from
  *  http://trac.galago-project.org/attachment/ticket/5/10-nd-improve-multihead-support.patch
@@ -1235,13 +1236,13 @@ gooroom_notify_daemon_load_config (GooroomNotifyDaemon *xndaemon,
 }
 
 GooroomNotifyDaemon *
-gooroom_notify_daemon_new_unique(GError **error)
+gooroom_notify_daemon_new_unique (GError **error)
 {
-    GooroomNotifyDaemon *xndaemon = g_object_new(GOOROOM_TYPE_NOTIFY_DAEMON, NULL);
+    GooroomNotifyDaemon *xndaemon = g_object_new (GOOROOM_TYPE_NOTIFY_DAEMON, NULL);
 
-    if(!gooroom_notify_daemon_load_config(xndaemon, error))
+    if(!gooroom_notify_daemon_load_config (xndaemon, error))
     {
-        g_object_unref(G_OBJECT(xndaemon));
+        g_object_unref (G_OBJECT (xndaemon));
         return NULL;
     }
 

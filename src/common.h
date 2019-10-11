@@ -1,5 +1,6 @@
 /*
  *  Copyright (c) 2016 Simon Steinbeiß <ochosi@xfce.org>
+ *  Copyright (c) 2015-2019 Gooroom <gooroom@gooroom.kr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,29 +20,9 @@
 #define __COMMON_H__
 
 #include <glib.h>
-#include <gtk/gtk.h>
-
-//#define XFCE_NOTIFY_LOG_FILE  "xfce4/notifyd/log"
-#define XFCE_NOTIFY_ICON_PATH "xfce4/notifyd/icons/"
 
 GdkPixbuf  *notify_pixbuf_from_image_data (GVariant *image_data);
 
 gchar      *notify_icon_name_from_desktop_id (const gchar *desktop_id);
-
-#if 0
-GKeyFile  *xfce_notify_log_get (void);
-
-void       xfce_notify_log_insert (const gchar *app_name,
-                                   const gchar *summary,
-                                   const gchar *body,
-                                   GVariant *image_data,
-                                   const gchar *image_path,
-                                   const gchar *app_icon,
-                                   const gchar *desktop_id,
-                                   gint expire_timeout,
-                                   const gchar **actions);
-
-GtkWidget *xfce_notify_clear_log_dialog (void);
-#endif
 
 #endif /* __COMMON_H__ */

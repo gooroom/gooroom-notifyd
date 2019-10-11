@@ -1,7 +1,6 @@
 /*
- *  gooroom-notifyd
- *
  *  Copyright (c) 2008 Brian Tarricone <bjt23@cornell.edu>
+ *  Copyright (c) 2015-2019 Gooroom <gooroom@gooroom.kr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,28 +33,27 @@
 #include "gooroom-notify-daemon.h"
 
 int
-main(int argc,
-     char **argv)
+main (int argc, char **argv)
 {
-    GooroomNotifyDaemon *xndaemon;
     GError *error = NULL;
+    GooroomNotifyDaemon *xndaemon;
 
 	setlocale (LC_ALL, "");
 	bindtextdomain (GETTEXT_PACKAGE, GNOMELOCALEDIR);
 	textdomain (GETTEXT_PACKAGE);
 
-    gtk_init(&argc, &argv);
+    gtk_init (&argc, &argv);
 
-    xndaemon = gooroom_notify_daemon_new_unique(&error);
+    xndaemon = gooroom_notify_daemon_new_unique (&error);
     if(!xndaemon) {
         fprintf (stderr, "Unable to start notification daemon: %s\n", error->message);
-        g_error_free(error);
+        g_error_free (error);
         return 1;
     }
 
-    gtk_main();
+    gtk_main ();
 
-    g_object_unref(G_OBJECT(xndaemon));
+    g_object_unref (G_OBJECT (xndaemon));
 
     return 0;
 }
