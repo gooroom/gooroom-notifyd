@@ -1,6 +1,6 @@
 /*
  *  Copyright (c) 2016 Simon Steinbeiß <ochosi@xfce.org>
- *  Copyright (c) 2015-2019 Gooroom <gooroom@gooroom.kr>
+ *  Copyright (c) 2019 Gooroom <gooroom@gooroom.kr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

@@ -2,7 +2,7 @@
  *  Copyright (c) 2008-2009 Brian Tarricone <bjt23@cornell.edu>
  *  Copyright (c) 2009 Jérôme Guelfucci <jeromeg@xfce.org>
  *  Copyright (c) 2015 Ali Abdallah    <ali@xfce.org>
- *  Copyright (c) 2015-2019 Gooroom <gooroom@gooroom.kr>
+ *  Copyright (c) 2019 Gooroom <gooroom@gooroom.kr>
  *
  *  The workarea per monitor code is taken from
  *  http://trac.galago-project.org/attachment/ticket/5/10-nd-improve-multihead-support.patch
