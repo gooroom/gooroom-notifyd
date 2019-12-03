@@ -1,0 +1,5 @@
+Gooroom Notify Daemon
+============================
+
+The Gooroom Notify Daemon (or "gooroom-notifyd") is a small program that implements
+the "server-side" portion of the Freedesktop desktop notifications specification.

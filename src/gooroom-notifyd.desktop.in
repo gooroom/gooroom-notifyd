@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Gooroom Notification Daemon
+Exec=@pkglibexecdir@/gooroom-notifyd
+StartupNotify=false
+NoDisplay=true
