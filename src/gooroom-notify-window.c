@@ -217,8 +217,8 @@ gooroom_notify_window_init(GooroomNotifyWindow *window)
     gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
     gtk_window_set_type_hint(GTK_WINDOW(window),
                              GDK_WINDOW_TYPE_HINT_NOTIFICATION);
+
     gtk_container_set_border_width(GTK_CONTAINER(window), 5);
-//    gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
 
     gtk_widget_add_events(GTK_WIDGET(window),
                           GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
@@ -362,9 +362,6 @@ gooroom_notify_window_realize(GtkWidget *widget)
 
     GTK_WIDGET_CLASS(gooroom_notify_window_parent_class)->realize(widget);
 
-    gdk_window_set_type_hint(gtk_widget_get_window(widget),
-                             GDK_WINDOW_TYPE_HINT_NOTIFICATION);
-    gdk_window_set_override_redirect(gtk_widget_get_window(widget), TRUE);
     gooroom_notify_window_start_expiration(window);
 }
 

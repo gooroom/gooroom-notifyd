@@ -248,18 +248,19 @@ gooroom_notify_rootwin_watch_workarea(GdkXEvent *gxevent,
     return GDK_FILTER_CONTINUE;
 }
 
-static void
-gooroom_notify_daemon_screen_changed(GdkScreen *screen,
-                                  gpointer user_data)
+static gboolean
+gooroom_notify_daemon_screen_changed_idle (gpointer user_data)
 {
     GooroomNotifyDaemon *xndaemon = GOOROOM_NOTIFY_DAEMON(user_data);
     gint j;
     gint new_nmonitor;
     gint old_nmonitor;
 
+    GdkScreen *screen = gdk_screen_get_default();
+
     if(!xndaemon->monitors_workarea || !xndaemon->reserved_rectangles)
         /* Placement data not initialized, don't update it */
-        return;
+        return FALSE;
 
     new_nmonitor = gooroom_notify_daemon_get_n_monitors (screen);
     old_nmonitor = GPOINTER_TO_INT(g_object_get_qdata(G_OBJECT(screen), XND_N_MONITORS));
@@ -287,6 +288,15 @@ gooroom_notify_daemon_screen_changed(GdkScreen *screen,
     g_tree_foreach(xndaemon->active_notifications,
                    (GTraverseFunc)gooroom_notify_daemon_update_reserved_rectangles,
                    xndaemon);
+
+    return FALSE;
+}
+
+static void
+gooroom_notify_daemon_screen_changed(GdkScreen *screen,
+                                  gpointer user_data)
+{
+    g_timeout_add (700, gooroom_notify_daemon_screen_changed_idle, user_data);
 }
 
 static void

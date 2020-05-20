@@ -27,7 +27,7 @@
       <description></description>
     </key>
     <key name="primary-monitor" type="u">
-      <default>0</default>
+      <default>1</default>
       <summary></summary>
       <description></description>
     </key>
