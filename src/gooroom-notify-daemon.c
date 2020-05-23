@@ -33,6 +33,8 @@
 #include <gdk/gdkx.h>
 #include <gio/gio.h>
 
+#include <X11/Xatom.h>
+
 #include "common.h"
 #include "gooroom-notify-gbus.h"
 #include "gooroom-notify-daemon.h"
@@ -224,30 +226,6 @@ gooroom_notify_daemon_get_n_monitors (GdkScreen *screen)
 #endif
 }
 
-static GdkFilterReturn
-gooroom_notify_rootwin_watch_workarea(GdkXEvent *gxevent,
-                                   GdkEvent *event,
-                                   gpointer user_data)
-{
-    GooroomNotifyDaemon *xndaemon = GOOROOM_NOTIFY_DAEMON(user_data);
-    XPropertyEvent *xevt = (XPropertyEvent *)gxevent;
-
-    if(xevt->type == PropertyNotify
-       && XInternAtom(xevt->display, "_NET_WORKAREA", False) == xevt->atom
-       && xndaemon->monitors_workarea)
-    {
-        GdkScreen *screen = gdk_event_get_screen(event);
-        int nmonitor = gooroom_notify_daemon_get_n_monitors (screen);
-        int j;
-
-        for(j = 0; j < nmonitor; j++)
-            gooroom_notify_daemon_get_workarea(screen, j,
-                                            &(xndaemon->monitors_workarea[j]));
-    }
-
-    return GDK_FILTER_CONTINUE;
-}
-
 static gboolean
 gooroom_notify_daemon_screen_changed_idle (gpointer user_data)
 {
@@ -255,8 +233,9 @@ gooroom_notify_daemon_screen_changed_idle (gpointer user_data)
     gint j;
     gint new_nmonitor;
     gint old_nmonitor;
+    GdkScreen *screen;
 
-    GdkScreen *screen = gdk_screen_get_default();
+    screen = gdk_screen_get_default();
 
     if(!xndaemon->monitors_workarea || !xndaemon->reserved_rectangles)
         /* Placement data not initialized, don't update it */
@@ -292,11 +271,29 @@ gooroom_notify_daemon_screen_changed_idle (gpointer user_data)
     return FALSE;
 }
 
+static GdkFilterReturn
+gooroom_notify_rootwin_watch_workarea(GdkXEvent *gxevent,
+                                   GdkEvent *event,
+                                   gpointer user_data)
+{
+    GooroomNotifyDaemon *xndaemon = GOOROOM_NOTIFY_DAEMON(user_data);
+    XPropertyEvent *xevt = (XPropertyEvent *)gxevent;
+
+    if(xevt->type == PropertyNotify
+       && XInternAtom(xevt->display, "_NET_WORKAREA", False) == xevt->atom
+       && xndaemon->monitors_workarea)
+    {
+        g_idle_add (gooroom_notify_daemon_screen_changed_idle, user_data);
+    }
+
+    return GDK_FILTER_CONTINUE;
+}
+
 static void
 gooroom_notify_daemon_screen_changed(GdkScreen *screen,
                                   gpointer user_data)
 {
-    g_timeout_add (700, gooroom_notify_daemon_screen_changed_idle, user_data);
+    g_idle_add (gooroom_notify_daemon_screen_changed_idle, user_data);
 }
 
 static void
@@ -321,8 +318,8 @@ gooroom_notify_daemon_init_placement_data(GooroomNotifyDaemon *xndaemon)
 
     /* Monitor root window changes */
     groot = gdk_screen_get_root_window(screen);
-    gdk_window_set_events(groot, gdk_window_get_events(groot) | GDK_PROPERTY_CHANGE_MASK);
     gdk_window_add_filter(groot, gooroom_notify_rootwin_watch_workarea, xndaemon);
+    gdk_window_set_events(groot, gdk_window_get_events(groot) | GDK_PROPERTY_CHANGE_MASK);
 }
 
 
@@ -580,6 +577,119 @@ translate_origin(GdkRectangle *src1,
     src1->y += yoffset;
 }
 
+static gboolean
+get_work_area (GdkWindow *gdk_window, GdkScreen *screen, int scale, GdkRectangle *rect)
+{
+        Atom            xatom;
+        Atom            type;
+        Window          win;
+        int             format;
+        gulong          num;
+        gulong          leftovers;
+        gulong          max_len = 4 * 32;
+        guchar         *ret_workarea;
+        long           *workareas;
+        int             result;
+        int             disp_screen;
+        int             desktop;
+        Display        *display;
+        int             i;
+
+        display = GDK_WINDOW_XDISPLAY (gdk_window);
+        win  = GDK_WINDOW_XID (gdk_window);
+
+        xatom = XInternAtom (display, "_NET_WM_STRUT_PARTIAL", True);
+
+        disp_screen = GDK_SCREEN_XNUMBER (screen);
+
+        /* Defaults in case of error */
+        rect->x = 0;
+        rect->y = 0;
+        rect->width = gdk_screen_get_width (screen) * scale;
+        rect->height = gdk_screen_get_height (screen) * scale;
+
+        if (xatom == None)
+                return FALSE;
+
+        result = XGetWindowProperty (display,
+                                     win,
+                                     xatom,
+                                     0,
+                                     max_len,
+                                     False,
+                                     AnyPropertyType,
+                                     &type,
+                                     &format,
+                                     &num,
+                                     &leftovers,
+                                     &ret_workarea);
+
+        if (result != Success
+            || type == None
+            || format == 0
+            || leftovers
+            || num % 12) {
+                return FALSE;
+        }
+
+        workareas = (long *) ret_workarea;
+
+        for (i = 0; i < 4; i++) {
+            int thickness, strut_begin, strut_end;
+
+            thickness = workareas[i];
+
+            if (thickness == 0)
+                continue;
+
+            strut_begin = workareas[4+(i*2)];
+            strut_end   = workareas[4+(i*2)+1];
+
+            switch (i)
+            {
+                case 0: // left
+                    rect->y      = strut_begin;
+                    rect->width  = thickness;
+                    rect->height = strut_end - strut_begin + 1;
+                break;
+                case 1: // right
+                    rect->x      = rect->x + rect->width - thickness;
+                    rect->y      = strut_begin;
+                    rect->width  = thickness;
+                    rect->height = strut_end - strut_begin + 1;
+                break;
+                case 2: // top
+                    rect->x      = strut_begin;
+                    rect->width  = strut_end - strut_begin + 1;
+                    rect->height = thickness;
+                break;
+                case 3: // bottom
+                    rect->x      = strut_begin;
+                    rect->y      = rect->y + rect->height - thickness;
+                    rect->width = strut_end - strut_begin + 1;
+                    rect->height = thickness;
+                break;
+                default:
+                    continue;
+            }
+        }
+
+        rect->x /= scale;
+        rect->y /= scale;
+        rect->width /= scale;
+        rect->height /= scale;
+
+        XFree (ret_workarea);
+
+        if (rect->x == 0 && rect->y == 0 &&
+            rect->width == gdk_screen_get_width (screen) &&
+            rect->height == gdk_screen_get_height (screen)) {
+            return FALSE;
+        }
+
+        return TRUE;
+}
+
 /* Returns the workarea (largest non-panel/dock occupied rectangle) for a given
    monitor. */
 static void
@@ -590,15 +700,23 @@ gooroom_notify_daemon_get_workarea(GdkScreen *screen,
     GdkDisplay *display;
     GList *windows_list, *l;
     gint monitor_xoff, monitor_yoff;
+    GdkRectangle monitor_rect;
+    gint scale = 1;
 
     display = gdk_screen_get_display(screen);
 
     /* Defaults */
 #if GTK_CHECK_VERSION (3, 22, 0)
     gdk_monitor_get_geometry (gdk_display_get_monitor (display, monitor_num), workarea);
+    scale = gdk_monitor_get_scale_factor (gdk_display_get_monitor (display, monitor_num));
 #else
     gdk_screen_get_monitor_geometry(screen, monitor_num, workarea);
 #endif
+
+    monitor_rect.x = workarea->x;
+    monitor_rect.y = workarea->y;
+    monitor_rect.width = workarea->width;
+    monitor_rect.height = workarea->height;
 
     monitor_xoff = workarea->x;
     monitor_yoff = workarea->y;
@@ -624,24 +742,21 @@ G_GNUC_END_IGNORE_DEPRECATIONS
         }
 
         if(type_hint == GDK_WINDOW_TYPE_HINT_DOCK) {
-            GdkRectangle window_geom, intersection;
+            GdkRectangle strut_rect, window_geom, intersection;
 
-            gdk_error_trap_push();
-            gdk_window_get_frame_extents(window, &window_geom);
-            gdk_flush();
-
-            if (gdk_error_trap_pop()) {
+            if (!get_work_area(window, screen, scale, &strut_rect))
                 continue;
-            }
 
-            if(gdk_rectangle_intersect(workarea, &window_geom, &intersection)){
-                translate_origin(workarea, -monitor_xoff, -monitor_yoff);
-                translate_origin(&intersection, -monitor_xoff, -monitor_yoff);
+            if(gdk_rectangle_intersect(&monitor_rect, &strut_rect, &window_geom)){
+                if(gdk_rectangle_intersect(workarea, &window_geom, &intersection)){
+                    translate_origin(workarea, -monitor_xoff, -monitor_yoff);
+                    translate_origin(&intersection, -monitor_xoff, -monitor_yoff);
 
-                gooroom_gdk_rectangle_largest_box(workarea, &intersection, workarea);
+                    gooroom_gdk_rectangle_largest_box(workarea, &intersection, workarea);
 
-                translate_origin(workarea, monitor_xoff, monitor_yoff);
-                translate_origin(&intersection, monitor_xoff, monitor_yoff);
+                    translate_origin(workarea, monitor_xoff, monitor_yoff);
+                    translate_origin(&intersection, monitor_xoff, monitor_yoff);
+                }
             }
         }
 
