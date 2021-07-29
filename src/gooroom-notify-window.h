@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2008-2009 Brian Tarricone <bjt23@cornell.edu>
  *  Copyright (c) 2009 Jérôme Guelfucci <jeromeg@xfce.org>
- *  Copyright (c) 2019 Gooroom <gooroom@gooroom.kr>
+ *  Copyright (c) 2019-2021 Gooroom <gooroom@gooroom.kr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,11 +22,19 @@
 
 #include <gtk/gtk.h>
 
-#define GOOROOM_TYPE_NOTIFY_WINDOW     (gooroom_notify_window_get_type())
-#define GOOROOM_NOTIFY_WINDOW(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), GOOROOM_TYPE_NOTIFY_WINDOW, GooroomNotifyWindow))
-#define GOOROOM_IS_NOTIFY_WINDOW(obj)  (G_TYPE_CHECK_INSTANCE_TYPE((obj), GOOROOM_TYPE_NOTIFY_WINDOW))
-
 G_BEGIN_DECLS
+
+#define GOOROOM_TYPE_NOTIFY_WINDOW            (gooroom_notify_window_get_type ())
+#define GOOROOM_NOTIFY_WINDOW(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), GOOROOM_TYPE_NOTIFY_WINDOW, GooroomNotifyWindow))
+#define GOOROOM_NOTIFY_WINDOW_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  GOOROOM_TYPE_NOTIFY_WINDOW, GooroomNotifyWindowClass))
+#define GOOROOM_IS_NOTIFY_WINDOW(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GOOROOM_TYPE_NOTIFY_WINDOW))
+#define GOOROOM_IS_NOTIFY_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  GOOROOM_TYPE_NOTIFY_WINDOW))
+#define GOOROOM_NOTIFY_WINDOW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  GOOROOM_TYPE_NOTIFY_WINDOW, GooroomNotifyWindowClass))
+
+typedef struct _GooroomNotifyWindow  GooroomNotifyWindow;
+typedef struct _GooroomNotifyWindowClass  GooroomNotifyWindowClass;
+typedef struct _GooroomNotifyWindowPrivate GooroomNotifyWindowPrivate;
+
 
 typedef enum
 {
@@ -36,74 +44,88 @@ typedef enum
     GOOROOM_NOTIFY_CLOSE_REASON_UNKNOWN,
 } GooroomNotifyCloseReason;
 
-typedef struct _GooroomNotifyWindow  GooroomNotifyWindow;
 
-GType gooroom_notify_window_get_type(void) G_GNUC_CONST;
+struct _GooroomNotifyWindow {
+	GtkWindow __parent__;
 
-GtkWidget *gooroom_notify_window_new(void);
+	GooroomNotifyWindowPrivate *priv;
+};
 
-GtkWidget *gooroom_notify_window_new_full(const gchar *summary,
-                                          const gchar *body,
-                                          const gchar *icon_name,
-                                          gint expire_timeout);
+struct _GooroomNotifyWindowClass {
+	GtkWindowClass __parent_class__;
 
-GtkWidget *gooroom_notify_window_new_with_actions(const gchar *summary,
-                                                  const gchar *body,
-                                                  const gchar *icon_name,
-                                                  gint expire_timeout,
-                                                  const gchar **actions/*,
-                                                  GtkCssProvider *css_provider*/);
+    /*< signals >*/
+    void (*closed)(GooroomNotifyWindow *window,
+                   GooroomNotifyCloseReason reason);
 
-void gooroom_notify_window_set_summary(GooroomNotifyWindow *window,
-                                       const gchar *summary);
-void gooroom_notify_window_set_body(GooroomNotifyWindow *window,
-                                    const gchar *body);
+    void (*action_invoked)(GooroomNotifyWindow *window,
+                           const gchar *action_id);
+};
 
-void gooroom_notify_window_set_geometry(GooroomNotifyWindow *window,
-                                        GdkRectangle rectangle);
-GdkRectangle *gooroom_notify_window_get_geometry(GooroomNotifyWindow *window);
 
-void gooroom_notify_window_set_last_monitor(GooroomNotifyWindow *window,
-                                            gint monitor);
-gint gooroom_notify_window_get_last_monitor(GooroomNotifyWindow *window);
+GType gooroom_notify_window_get_type (void) G_GNUC_CONST;
 
-void gooroom_notify_window_set_icon_name(GooroomNotifyWindow *window,
-                                         const gchar *icon_name);
-void gooroom_notify_window_set_icon_pixbuf(GooroomNotifyWindow *window,
-                                           GdkPixbuf *pixbuf);
+GtkWidget *gooroom_notify_window_new (void);
 
-void gooroom_notify_window_set_expire_timeout(GooroomNotifyWindow *window,
-                                              gint expire_timeout);
+GtkWidget *gooroom_notify_window_new_full (const gchar *summary,
+                                           const gchar *body,
+                                           const gchar *icon_name,
+                                           gint expire_timeout);
 
-void gooroom_notify_window_set_actions(GooroomNotifyWindow *window,
-                                       const gchar **actions/*,
-                                       GtkCssProvider *css_provider*/);
+GtkWidget *gooroom_notify_window_new_with_actions (const gchar *summary,
+                                                   const gchar *body,
+                                                   const gchar *icon_name,
+                                                   gint expire_timeout,
+                                                   const gchar **actions);
 
-void gooroom_notify_window_set_fade_transparent(GooroomNotifyWindow *window,
-                                                gboolean fade_transparent);
-gboolean gooroom_notify_window_get_fade_transparent(GooroomNotifyWindow *window);
+void gooroom_notify_window_set_summary (GooroomNotifyWindow *window,
+                                        const gchar *summary);
+void gooroom_notify_window_set_body (GooroomNotifyWindow *window,
+                                     const gchar *body);
 
-void gooroom_notify_window_set_opacity(GooroomNotifyWindow *window,
-                                       gdouble opacity);
-gdouble gooroom_notify_window_get_opacity(GooroomNotifyWindow *window);
+void gooroom_notify_window_set_geometry (GooroomNotifyWindow *window,
+                                         GdkRectangle rectangle);
+GdkRectangle *gooroom_notify_window_get_geometry (GooroomNotifyWindow *window);
 
-void gooroom_notify_window_set_icon_only(GooroomNotifyWindow *window,
-                                         gboolean icon_only);
+void gooroom_notify_window_set_last_monitor (GooroomNotifyWindow *window,
+                                             gint monitor);
+gint gooroom_notify_window_get_last_monitor (GooroomNotifyWindow *window);
 
-void gooroom_notify_window_set_gauge_value(GooroomNotifyWindow *window,
-                                           gint value/*,
-                                           GtkCssProvider *css_provider*/);
-void gooroom_notify_window_unset_gauge_value(GooroomNotifyWindow *window);
+void gooroom_notify_window_set_icon_name (GooroomNotifyWindow *window,
+                                          const gchar *icon_name);
+void gooroom_notify_window_set_icon_pixbuf (GooroomNotifyWindow *window,
+                                            GdkPixbuf *pixbuf);
 
-void gooroom_notify_window_set_do_fadeout(GooroomNotifyWindow *window,
-                                          gboolean do_fadeout,
-                                          gboolean do_slideout);
+void gooroom_notify_window_set_expire_timeout (GooroomNotifyWindow *window,
+                                               gint expire_timeout);
 
-void gooroom_notify_window_set_notify_location(GooroomNotifyWindow *window,
-                                               GtkCornerType notify_location);
+void gooroom_notify_window_set_actions (GooroomNotifyWindow *window,
+                                        const gchar **actions);
+
+void gooroom_notify_window_set_fade_transparent (GooroomNotifyWindow *window,
+                                                 gboolean fade_transparent);
+gboolean gooroom_notify_window_get_fade_transparent (GooroomNotifyWindow *window);
+
+void gooroom_notify_window_set_opacity (GooroomNotifyWindow *window,
+                                        gdouble opacity);
+gdouble gooroom_notify_window_get_opacity (GooroomNotifyWindow *window);
+
+void gooroom_notify_window_set_icon_only (GooroomNotifyWindow *window,
+                                          gboolean icon_only);
+
+void gooroom_notify_window_set_gauge_value (GooroomNotifyWindow *window,
+                                            gint value);
+void gooroom_notify_window_unset_gauge_value (GooroomNotifyWindow *window);
+
+void gooroom_notify_window_set_do_fadeout (GooroomNotifyWindow *window,
+                                           gboolean do_fadeout,
+                                           gboolean do_slideout);
+
+void gooroom_notify_window_set_notify_location (GooroomNotifyWindow *window,
+                                                GtkCornerType notify_location);
 /* signal trigger */
-void gooroom_notify_window_closed(GooroomNotifyWindow *window,
-                                  GooroomNotifyCloseReason reason);
+void gooroom_notify_window_closed (GooroomNotifyWindow *window,
+                                   GooroomNotifyCloseReason reason);
 
 G_END_DECLS
 

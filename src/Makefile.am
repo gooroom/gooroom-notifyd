@@ -33,6 +33,12 @@ gooroom_notifyd_LDADD = \
 gooroom_notifyd_LDFLAGS = \
 	-export-dynamic
 
+resource_files = $(shell glib-compile-resources --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/gresource.xml)
+notify-resources.c: gresource.xml $(resource_files)
+	$(AM_V_GEN) glib-compile-resources --target=$@ --sourcedir=$(srcdir) --generate-source --c-name notify $<
+notify-resources.h: gresource.xml $(resource_files)
+	$(AM_V_GEN) glib-compile-resources --target=$@ --sourcedir=$(srcdir) --generate-header --c-name notify $<
+
 %.desktop: %.desktop.in
 	$(AM_V_GEN) sed -e "s|\@pkglibexecdir\@|$(pkglibexecdir)|" $< > $@
 
@@ -57,7 +63,9 @@ BUILT_SOURCES = \
 	gooroom-notify-marshal.h \
 	gooroom-notify-marshal.c \
 	gooroom-notify-enum-types.h \
-	gooroom-notify-enum-types.c
+	gooroom-notify-enum-types.c \
+	notify-resources.h \
+	notify-resources.c
 
 gooroom-notify-gbus.h:
 gooroom-notify-gbus.c: $(top_srcdir)/src/notify-dbus.xml Makefile

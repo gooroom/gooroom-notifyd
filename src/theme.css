@@ -1,0 +1,34 @@
+* {
+  outline-color: transparent;
+  transition: none;
+  text-shadow: none;
+  box-shadow: none;
+  -gtk-icon-effect: none;
+  -gtk-icon-shadow: none; }
+
+.notify-window {
+	background-color: transparent;
+}
+
+.topvbox {
+	border-radius: 15px;
+	border: 1px solid rgba(230, 230, 230, 0.5);
+	background-color: #ffffff;
+	box-shadow: 0px 2px 4px 0 rgba(0, 0, 0, 0.3);
+	padding: 20px; }
+	.topvbox:hover {
+		border-color: #3e6ddc; }
+	.topvbox:active {
+		border-color: rgba(230, 230, 230, 0.5);
+		background-color: rgba(255, 255, 255, 0.7); }
+
+.summary {
+	color: #4a4a4a;
+	font-weight: bold;
+	font-size: 110%; }
+
+.body {
+	color: #000000; }
+
+.icon {
+	color: #000000; }

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.38.2 -->
+<interface>
+  <requires lib="gtk+" version="3.24"/>
+  <template class="GooroomNotifyWindow" parent="GtkWindow">
+    <property name="can-focus">False</property>
+    <property name="border-width">10</property>
+    <property name="resizable">False</property>
+    <property name="default-width">350</property>
+    <property name="type-hint">notification</property>
+    <property name="skip-taskbar-hint">True</property>
+    <property name="skip-pager-hint">True</property>
+    <property name="accept-focus">False</property>
+    <property name="decorated">False</property>
+    <property name="deletable">False</property>
+    <child>
+      <object class="GtkBox" id="main_box">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">12</property>
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="spacing">10</property>
+            <child>
+              <object class="GtkBox" id="icon_box">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkImage" id="icon">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="icon-name">notification-alert-symbolic</property>
+                    <style>
+                      <class name="icon"/>
+                    </style>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <style>
+                  <class name="icon-box"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="summary">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="valign">baseline</property>
+                <property name="label" translatable="yes">summary</property>
+                <property name="wrap">True</property>
+                <property name="wrap-mode">word-char</property>
+                <property name="ellipsize">end</property>
+                <property name="width-chars">0</property>
+                <property name="max-width-chars">0</property>
+                <property name="lines">1</property>
+                <property name="xalign">0</property>
+                <style>
+                  <class name="summary"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="content_box">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">5</property>
+            <child>
+              <object class="GtkLabel" id="body">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="valign">baseline</property>
+                <property name="label" translatable="yes">body</property>
+                <property name="wrap">True</property>
+                <property name="wrap-mode">word-char</property>
+                <property name="ellipsize">end</property>
+                <property name="width-chars">0</property>
+                <property name="max-width-chars">0</property>
+                <property name="lines">2</property>
+                <property name="xalign">0</property>
+                <style>
+                  <class name="body"/>
+                </style>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButtonBox" id="button_box">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="spacing">5</property>
+            <property name="layout-style">end</property>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack-type">end</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+        <style>
+          <class name="topvbox"/>
+        </style>
+      </object>
+    </child>
+    <style>
+      <class name="notify-window"/>
+    </style>
+  </template>
+</interface>
