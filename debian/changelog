@@ -1,3 +1,10 @@
+gooroom-notifyd (0.5.0+grm3u1) unstable; urgency=medium
+
+  [ cjheo ]
+  * [cc47d911] Rebase for Gooroom-3.0
+
+ -- Gooroom Autobuilder <jenkins@gooroom.kr>  Sat, 04 Dec 2021 21:39:43 +0900
+
 gooroom-notifyd (0.4.4+grm2u1) unstable; urgency=medium
 
   [ cjheo ]
